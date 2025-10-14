@@ -1,94 +1,21 @@
 package main
 
 import (
-	"net/http"
-	"tidy/tests"
-	"time"
+	"context"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gorilla/websocket"
+	"gorm.io/gorm"
 )
 
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-}
-
-func helloworld(c *gin.Context) {
-	c.String(http.StatusOK, "Hello World! Time : %s", time.Now().Format(time.RFC3339Nano))
-}
-
-func LoginRoute(c *gin.Context) {
-	c.String(http.StatusOK, "Hello World! Time : %s", time.Now().Format(time.RFC3339Nano))
-}
-
-func RegisterRoute(c *gin.Context) {
-	c.String(http.StatusOK, "Hello World! Time : %s", time.Now().Format(time.RFC3339Nano))
-}
-
-func GetRoom(c *gin.Context) {
-	c.String(http.StatusOK, "Hello World! Time : %s", time.Now().Format(time.RFC3339Nano))
-}
-
-func GetRooms(c *gin.Context) {
-	c.String(http.StatusOK, "Hello World! Time : %s", time.Now().Format(time.RFC3339Nano))
-}
-
-func CreateRoom(c *gin.Context) {
-	c.String(http.StatusOK, "Hello World! Time : %s", time.Now().Format(time.RFC3339Nano))
-}
-
-func DeleteRoom(c *gin.Context) {
-	c.String(http.StatusOK, "Hello World! Time : %s", time.Now().Format(time.RFC3339Nano))
-}
-
-func SendMessageRoute(c *gin.Context) {
-	c.String(http.StatusOK, "Hello World! Time : %s", time.Now().Format(time.RFC3339Nano))
-}
-
-func WebSocketRoute(c *gin.Context) {
-	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
-	if err != nil {
-		return
-	}
-	defer conn.Close()
-	for {
-		conn.WriteMessage(websocket.TextMessage, []byte("Hello, WebSocket!"))
-		time.Sleep(time.Second)
-	}
-}
+var (
+	db  *gorm.DB
+	ctx context.Context
+)
 
 /*
-user:
-	id,
-	username,
-	password
-
-room:
-	id,
-	name,
-	password?, : string
-	public? : bool
-	owner: user
-	users: user[]
-	messages: message[]
-
-message:
-	id,
-	text,
-	images?, : string (liens d'images)
-	user: user
-	room: room
-
-cache:
-	id,
-	user: user
-	message: message
-	isRead: bool
-
 On peut s'enregistrer / se login.
 
-Quand on est connécté -> token JWT.
+Quand on est connecté -> token interne grâce à la table Token
 
 On peut voir les rooms ou s'est déjà enregistré (on peut se connecter a une route et on l'enregistre dans notre liste de rooms)
 
@@ -101,25 +28,40 @@ pour faire une notification quand il ce reconnecte.
 */
 
 func main() {
-	tests.Test_sum()
+	db, ctx = StartDB()
 
 	router := gin.New()
+
+	// Create
+	/*
+		err = gorm.G[Product](db).Create(ctx, &Product{Code: "D42", Price: 100})
+
+		// Read
+		product, err := gorm.G[Product](db).Where("id = ?", 1).First(ctx)       // find product with integer primary key
+		products, err := gorm.G[Product](db).Where("code = ?", "D42").Find(ctx) // find product with code D42
+
+		// Update - update product's price to 200
+		err = gorm.G[Product](db).Where("id = ?", product.ID).Update(ctx, "Price", 200)
+		// Update - update multiple fields
+		err = gorm.G[Product](db).Where("id = ?", product.ID).Updates(ctx, map[string]interface{}{"Price": 200, "Code": "F42"})
+
+		// Delete - delete product
+		err = gorm.G[Product](db).Where("id = ?", product.ID).Delete(ctx)
+	*/
 
 	router.GET("/", helloworld)
 
 	router.POST("/auth/login", LoginRoute)
 	router.POST("/auth/register", RegisterRoute)
 
-	//
+	router.POST("/api/ws", AuthMiddleware(), WebSocketRoute)
 
-	router.GET("/ws", WebSocketRoute)
+	router.GET("/api/room", AuthMiddleware(), GetRoom)
+	router.GET("/api/rooms", AuthMiddleware(), GetRooms)
+	router.POST("/api/room", AuthMiddleware(), CreateRoom)
+	router.DELETE("/api/room", AuthMiddleware(), DeleteRoom)
 
-	router.GET("/api/room", GetRoom)
-	router.GET("/api/rooms", GetRooms)
-	router.POST("/api/room", CreateRoom)
-	router.DELETE("/api/room", DeleteRoom)
-
-	router.POST("/api/message", SendMessageRoute)
+	router.POST("/api/message", AuthMiddleware(), SendMessageRoute)
 
 	router.Run("localhost:3000")
 }
