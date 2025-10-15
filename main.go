@@ -13,10 +13,6 @@ var (
 )
 
 /*
-On peut s'enregistrer / se login.
-
-Quand on est connecté -> token interne grâce à la table Token
-
 On peut voir les rooms ou s'est déjà enregistré (on peut se connecter a une route et on l'enregistre dans notre liste de rooms)
 
 On peux donc envoyer un message dans une room
@@ -27,7 +23,33 @@ Un user qui est connécté à l'app est donc informer directement en websocket m
 pour faire une notification quand il ce reconnecte.
 */
 
+/*
+test gin :
+
+	func setupRouter() *gin.Engine {
+	  r := gin.Default()
+	  r.GET("/ping", func(c *gin.Context) {
+	    c.String(http.StatusOK, "pong")
+	  })
+	  return r
+	}
+
+	func TestPingRoute(t *testing.T) {
+	  router := setupRouter()
+
+	  w := httptest.NewRecorder()
+	  req, _ := http.NewRequest(http.MethodGet, "/ping", nil)
+	  router.ServeHTTP(w, req)
+
+	  assert.Equal(t, http.StatusOK, w.Code)
+	  assert.Equal(t, "pong", w.Body.String())
+	}
+*/
+
 func main() {
+
+	// gin.SetMode(gin.ReleaseMode) // Prod
+
 	db, ctx = StartDB()
 
 	router := gin.New()

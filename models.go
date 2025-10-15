@@ -11,7 +11,7 @@ import (
 type User struct {
 	gorm.Model
 	Username string
-	Password uint
+	Password string
 }
 
 type Room struct {
@@ -47,8 +47,10 @@ type CacheMessage struct {
 
 type Token struct {
 	gorm.Model
-	token    string
-	expireAt time.Time
+	Token    string
+	UserID   uint
+	User     User
+	ExpireAt time.Time
 }
 
 func StartDB() (*gorm.DB, context.Context) {
@@ -60,7 +62,7 @@ func StartDB() (*gorm.DB, context.Context) {
 
 	ctx := context.Background()
 
-	// Migrate the schema
+	// Migrate all schemas
 	db.AutoMigrate(&User{}, &Room{}, &Image{}, &Message{}, &CacheMessage{}, &Token{})
 
 	return db, ctx
